@@ -40,7 +40,7 @@ int main () {
 		}
 	}
 
-
+	// 结束
 	EndBatchDraw(); // 游戏结束，清理资源
 	closegraph(); // 关闭图形窗口
 
