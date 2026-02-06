@@ -5,6 +5,30 @@
 const int Player_Anim_Num = 6; // 定义一个动画帧总数常量
 int idx_current_anim = 0;  // 定义一个全局变量来储存当前动画的索引帧
 
+IMAGE img_player_left[Player_Anim_Num]; // 定义一个数组来储存玩家的所有动画帧
+IMAGE img_player_right[Player_Anim_Num];
+
+// 把图片数组通过循环写入文件
+void LoadAnimation() {
+	for (int i = 0; i < Player_Anim_Num; i++) {
+		std::wstring path = L"assets/img/player_left_" + std::to_wstring(i) + L".png";
+		loadimage(&img_player_left[i], path.c_str());
+	}
+	for (int i = 0; i < Player_Anim_Num; i++) {
+		std::wstring path = L"assets/img/player_right_" + std::to_wstring(i) + L".png";
+		loadimage(&img_player_right[i], path.c_str());
+	}
+}
+
+// 封装一个putimage_alpha函数，用于绘制带透明通道的图片
+#pragma comment(lib, "Msimg32.lib")
+inline void putimage_alpha(int x, int y, IMAGE* img) {
+	int w = img->getwidth();
+	int h = img->getheight();
+	AlphaBlend(GetImageHDC(NULL), x, y, w, h,
+		GetImageHDC(img), 0, 0, w, h, { AC_SRC_OVER, 0, 255, AC_SRC_ALPHA });
+}
+
 int main() {
 	HWND test = initgraph(1280, 720);
 	SetWindowTextW(test, L"类吸血鬼");
@@ -12,10 +36,12 @@ int main() {
 	bool running = true;
 	ExMessage msg;
 
-	IMAGE img_background;
+	IMAGE img_background; // 背景图片
 	loadimage(&img_background, L"assets/img/background.png");
 
 	BeginBatchDraw(); // 批量绘制，减少闪烁
+
+	LoadAnimation(); // 加载玩家动画帧
 
 	// 0.主循环
 	while (running) {
@@ -38,7 +64,10 @@ int main() {
 		// 2.游戏运行时绘制
 		if (running) {
 			cleardevice(); // 清屏
+
 			putimage(0, 0, &img_background); // 绘制背景	
+			putimage_alpha(500, 500, &img_player_right[idx_current_anim]);
+
 			FlushBatchDraw(); // 刷新绘制
 		}
 
