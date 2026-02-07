@@ -2,8 +2,10 @@
 #include <iostream>
 #include <string>
 
+const int Player_Speed = 10; // 定义一个玩家移动速度常量
 const int Player_Anim_Num = 6; // 定义一个动画帧总数常量
 int idx_current_anim = 0;  // 定义一个全局变量来储存当前动画的索引帧
+POINT player_pos = { 500, 500 }; // 定义一个全局变量来储存玩家的位置
 
 IMAGE img_player_left[Player_Anim_Num]; // 定义一个数组来储存玩家的所有动画帧
 IMAGE img_player_right[Player_Anim_Num];
@@ -43,14 +45,60 @@ int main() {
 
 	LoadAnimation(); // 加载玩家动画帧
 
+	bool is_move_up = false;
+	bool is_move_down = false;
+	bool is_move_left = false;
+	bool is_move_right = false;
+
 	// 0.主循环
 	while (running) {
+
 		DWORD start_time = GetTickCount();
 
 		// 1.处理消息
 		while (peekmessage(&msg)) {
-
+			if (msg.message == WM_KEYDOWN) {
+				switch (msg.vkcode) {
+				case VK_ESCAPE:
+					running = false; // 按下 ESC 键退出游戏
+					break;
+				case 'A':
+					is_move_left = true;
+					break;
+				case 'D':
+					is_move_right = true;
+					break;
+				case 'W':
+					is_move_up = true;
+					break;
+				case 'S':
+					is_move_down = true;
+					break;
+				}
+			}
+			else if (msg.message == WM_KEYUP) {
+				switch (msg.vkcode) {
+					case 'A':
+						is_move_left = false;
+						break;
+					case 'D':
+						is_move_right = false;
+						break;
+					case 'W':
+						is_move_up = false;
+						break;
+					case 'S':
+						is_move_down = false;
+						break;
+				}
+			}
+			
 		}
+
+		if (is_move_left) player_pos.x -= Player_Speed;
+		if (is_move_right) player_pos.x += Player_Speed;
+		if (is_move_up) player_pos.y -= Player_Speed;
+		if (is_move_down) player_pos.y += Player_Speed;
 
 
 		// 更新动画帧
@@ -66,7 +114,7 @@ int main() {
 			cleardevice(); // 清屏
 
 			putimage(0, 0, &img_background); // 绘制背景	
-			putimage_alpha(500, 500, &img_player_right[idx_current_anim]);
+			putimage_alpha(player_pos.x, player_pos.y, &img_player_right[idx_current_anim]);
 
 			FlushBatchDraw(); // 刷新绘制
 		}

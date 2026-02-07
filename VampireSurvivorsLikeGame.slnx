@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="VampireSurvivorsLikeGame/VampireSurvivorsLikeGame.vcxproj" />
+  <Project Path="VampireSurvivorsLikeGame/VampireSurvivorsLikeGame.vcxproj" Id="a513fb5b-d151-4d2d-b29c-a81af8caec44" />
 </Solution>
