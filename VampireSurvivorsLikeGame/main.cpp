@@ -1,26 +1,11 @@
 #include <graphics.h>
 #include <iostream>
 #include <string>
+#include "Animation.h"
 
 const int Player_Speed = 10; // 定义一个玩家移动速度常量
-const int Player_Anim_Num = 6; // 定义一个动画帧总数常量
-int idx_current_anim = 0;  // 定义一个全局变量来储存当前动画的索引帧
-POINT player_pos = { 500, 500 }; // 定义一个全局变量来储存玩家的位置
+POINT player_pos = {500, 500}; // 定义一个全局变量来储存玩家的位置
 
-IMAGE img_player_left[Player_Anim_Num]; // 定义一个数组来储存玩家的所有动画帧
-IMAGE img_player_right[Player_Anim_Num];
-
-// 把图片数组通过循环写入文件
-void LoadAnimation() {
-	for (int i = 0; i < Player_Anim_Num; i++) {
-		std::wstring path = L"assets/img/player_left_" + std::to_wstring(i) + L".png";
-		loadimage(&img_player_left[i], path.c_str());
-	}
-	for (int i = 0; i < Player_Anim_Num; i++) {
-		std::wstring path = L"assets/img/player_right_" + std::to_wstring(i) + L".png";
-		loadimage(&img_player_right[i], path.c_str());
-	}
-}
 
 // 封装一个putimage_alpha函数，用于绘制带透明通道的图片
 #pragma comment(lib, "Msimg32.lib")
@@ -31,9 +16,28 @@ inline void putimage_alpha(int x, int y, IMAGE* img) {
 		GetImageHDC(img), 0, 0, w, h, { AC_SRC_OVER, 0, 255, AC_SRC_ALPHA });
 }
 
+// 通过Animation类的构造函数来把动画写入对象
+Animation anim_left_player{ L"assets/img/player_left_%d.png", 6, 45 };
+Animation anim_right_player{ L"assets/img/player_right_%d.png", 6, 45 };
+
+// 绘制玩家动画
+void drawPlayer(int delta, int dir_x) {
+	static bool facing_left = false; // 定义一个静态变量来记录玩家当前的朝向，默认向右
+	if (dir_x < 0)
+		facing_left = true;
+	else if (dir_x >0)
+		facing_left = false;
+
+	if (facing_left)
+		anim_left_player.Play(player_pos.x, player_pos.y, delta);
+	else
+		anim_right_player.Play(player_pos.x, player_pos.y, delta);
+}
+
+
 int main() {
 	HWND test = initgraph(1280, 720);
-	SetWindowTextW(test, L"类吸血鬼");
+	SetWindowTextW(test, L"类吸血鬼"); 
 
 	bool running = true;
 	ExMessage msg;
@@ -43,12 +47,12 @@ int main() {
 
 	BeginBatchDraw(); // 批量绘制，减少闪烁
 
-	LoadAnimation(); // 加载玩家动画帧
-
 	bool is_move_up = false;
 	bool is_move_down = false;
 	bool is_move_left = false;
 	bool is_move_right = false;
+
+	bool is_facing_right = true; // 记录角色朝向，默认向右
 
 	// 0.主循环
 	while (running) {
@@ -95,26 +99,27 @@ int main() {
 			
 		}
 
-		if (is_move_left) player_pos.x -= Player_Speed;
-		if (is_move_right) player_pos.x += Player_Speed;
-		if (is_move_up) player_pos.y -= Player_Speed;
-		if (is_move_down) player_pos.y += Player_Speed;
-
-
-		// 更新动画帧
-		static int counter = 0; // 定义一个循环内 static 局部变量来记录当前一共播放了几个游戏帧
-		if ((++counter % 5) == 0) { // 实现每5个游戏帧切换一个动画帧
-			idx_current_anim++;    // 考虑动画帧序列结束后的行为
+		if (is_move_left) {
+			player_pos.x -= Player_Speed;
+			is_facing_right = false; // 按左键时，面朝左
 		}
-		idx_current_anim = idx_current_anim % Player_Anim_Num;  // 循环播放动画帧
+		if (is_move_right) {
+			player_pos.x += Player_Speed;
+			is_facing_right = true;  // 按右键时，面朝右
+		}
+		if (is_move_up)    player_pos.y -= Player_Speed;
+		if (is_move_down)  player_pos.y += Player_Speed;
 
 
 		// 2.游戏运行时绘制
 		if (running) {
 			cleardevice(); // 清屏
+			putimage(0, 0, &img_background); // 绘制背景
+			
 
-			putimage(0, 0, &img_background); // 绘制背景	
-			putimage_alpha(player_pos.x, player_pos.y, &img_player_right[idx_current_anim]);
+			// 2. 绘制逻辑：根据朝向状态选择图片数组，每一帧只画一张图
+			drawPlayer(0,)
+
 
 			FlushBatchDraw(); // 刷新绘制
 		}
