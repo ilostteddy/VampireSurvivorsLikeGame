@@ -6,16 +6,6 @@
 const int Player_Speed = 10; // 定义一个玩家移动速度常量
 POINT player_pos = {500, 500}; // 定义一个全局变量来储存玩家的位置
 
-
-// 封装一个putimage_alpha函数，用于绘制带透明通道的图片
-#pragma comment(lib, "Msimg32.lib")
-inline void putimage_alpha(int x, int y, IMAGE* img) {
-	int w = img->getwidth();
-	int h = img->getheight();
-	AlphaBlend(GetImageHDC(NULL), x, y, w, h,
-		GetImageHDC(img), 0, 0, w, h, { AC_SRC_OVER, 0, 255, AC_SRC_ALPHA });
-}
-
 // 通过Animation类的构造函数来把动画写入对象
 Animation anim_left_player{ L"assets/img/player_left_%d.png", 6, 45 };
 Animation anim_right_player{ L"assets/img/player_right_%d.png", 6, 45 };
@@ -37,7 +27,7 @@ void drawPlayer(int delta, int dir_x) {
 
 int main() {
 	HWND test = initgraph(1280, 720);
-	SetWindowTextW(test, L"类吸血鬼"); 
+	SetWindowTextW(test, L"类吸血鬼");
 
 	bool running = true;
 	ExMessage msg;
@@ -54,8 +44,14 @@ int main() {
 
 	bool is_facing_right = true; // 记录角色朝向，默认向右
 
+	DWORD last_tick = GetTickCount();
+
 	// 0.主循环
 	while (running) {
+		//  计算真正的 delta (当前时间 - 上一帧的时间)
+		DWORD current_tick = GetTickCount();
+		int delta = (int)(current_tick - last_tick);
+		last_tick = current_tick; // 更新上一帧时间给下一次循环用
 
 		DWORD start_time = GetTickCount();
 
@@ -99,29 +95,26 @@ int main() {
 			
 		}
 
-		if (is_move_left) {
-			player_pos.x -= Player_Speed;
-			is_facing_right = false; // 按左键时，面朝左
-		}
-		if (is_move_right) {
-			player_pos.x += Player_Speed;
-			is_facing_right = true;  // 按右键时，面朝右
-		}
+		if (is_move_left)  player_pos.x -= Player_Speed;
+		if (is_move_right) player_pos.x += Player_Speed;
 		if (is_move_up)    player_pos.y -= Player_Speed;
 		if (is_move_down)  player_pos.y += Player_Speed;
 
 
 		// 2.游戏运行时绘制
 		if (running) {
-			cleardevice(); // 清屏
-			putimage(0, 0, &img_background); // 绘制背景
-			
+			cleardevice();
+			putimage(0, 0, &img_background);
 
-			// 2. 绘制逻辑：根据朝向状态选择图片数组，每一帧只画一张图
-			drawPlayer(0,)
+			// 确定移动方向
+			int dir_x = 0;
+			if (is_move_left) dir_x = -1;
+			else if (is_move_right) dir_x = 1;
 
+			// 关键调用：传入时间增量和方向
+			drawPlayer(delta, dir_x);
 
-			FlushBatchDraw(); // 刷新绘制
+			FlushBatchDraw();
 		}
 
 		// 3.控制帧率

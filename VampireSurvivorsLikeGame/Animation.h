@@ -3,6 +3,15 @@
 #include <vector>
 #include <graphics.h>
 
+// 封装一个putimage_alpha函数，用于绘制带透明通道的图片
+#pragma comment(lib, "Msimg32.lib")
+inline void putimage_alpha(int x, int y, IMAGE* img) {
+	int w = img->getwidth();
+	int h = img->getheight();
+	AlphaBlend(GetImageHDC(NULL), x, y, w, h,
+		GetImageHDC(img), 0, 0, w, h, { AC_SRC_OVER, 0, 255, AC_SRC_ALPHA });
+}
+
 class Animation {
 
 public:
@@ -40,6 +49,6 @@ private:
 	int timer = 0; // 定义一个计时器成员变量，用于跟踪动画时间	
 	int idx_frame = 0; // 定义一个索引成员变量，用于跟踪当前动画帧
 	std::vector<IMAGE*> frame_list;
-	int intervel_ms = 0;
+	int intervel_ms = 45;
 };
 
