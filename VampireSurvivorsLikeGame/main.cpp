@@ -33,7 +33,9 @@ int main() {
 	ExMessage msg;
 
 	IMAGE img_background; // 背景图片
+	IMAGE img_shadow;     // 背景图片
 	loadimage(&img_background, L"assets/img/background.png");
+	loadimage(&img_shadow, L"assets/img/shadow_player.png");
 
 	BeginBatchDraw(); // 批量绘制，减少闪烁
 
@@ -44,11 +46,11 @@ int main() {
 
 	bool is_facing_right = true; // 记录角色朝向，默认向右
 
-	DWORD last_tick = GetTickCount();
+	DWORD last_tick = GetTickCount(); // 初始化上一帧时间
 
 	// 0.主循环
 	while (running) {
-		//  计算真正的 delta (当前时间 - 上一帧的时间)
+		//  delta (当前时间 - 上一帧的时间)
 		DWORD current_tick = GetTickCount();
 		int delta = (int)(current_tick - last_tick);
 		last_tick = current_tick; // 更新上一帧时间给下一次循环用
