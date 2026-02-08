@@ -6,12 +6,28 @@
 const int Player_Speed = 10; // 定义一个玩家移动速度常量
 POINT player_pos = {500, 500}; // 定义一个全局变量来储存玩家的位置
 
+
 // 通过Animation类的构造函数来把动画写入对象
-Animation anim_left_player{ L"assets/img/player_left_%d.png", 6, 45 };
-Animation anim_right_player{ L"assets/img/player_right_%d.png", 6, 45 };
+Animation anim_left_player{ L"assets/img/player_left_%d.png", 6, 80 };
+Animation anim_right_player{ L"assets/img/player_right_%d.png", 6, 80 };
+
+
+IMAGE img_background; // 背景图片
+IMAGE img_shadow;     // 人物阴影图片
+
+int screen_width = 1280;
+int screen_height = 720;
+const int PLAYER_WIDTH = 80;  // 玩家宽度
+const int PLAYER_HEIGHT = 80;  // 玩家高度
+const int SHADOW_WIDTH = 32; // 阴影宽度 
+
 
 // 绘制玩家动画
 void drawPlayer(int delta, int dir_x) {
+	int shadow_x = player_pos.x + (PLAYER_WIDTH - SHADOW_WIDTH) / 2;
+	int shadow_y = player_pos.y + PLAYER_HEIGHT - 8;
+	putimage_alpha(shadow_x, shadow_y, &img_shadow);
+
 	static bool facing_left = false; // 定义一个静态变量来记录玩家当前的朝向，默认向右
 	if (dir_x < 0)
 		facing_left = true;
@@ -25,15 +41,14 @@ void drawPlayer(int delta, int dir_x) {
 }
 
 
+
 int main() {
-	HWND test = initgraph(1280, 720);
+	HWND test = initgraph(screen_width, screen_height);
 	SetWindowTextW(test, L"类吸血鬼");
 
 	bool running = true;
 	ExMessage msg;
 
-	IMAGE img_background; // 背景图片
-	IMAGE img_shadow;     // 背景图片
 	loadimage(&img_background, L"assets/img/background.png");
 	loadimage(&img_shadow, L"assets/img/shadow_player.png");
 
@@ -97,10 +112,34 @@ int main() {
 			
 		}
 
-		if (is_move_left)  player_pos.x -= Player_Speed;
-		if (is_move_right) player_pos.x += Player_Speed;
-		if (is_move_up)    player_pos.y -= Player_Speed;
-		if (is_move_down)  player_pos.y += Player_Speed;
+
+		// 玩家移动逻辑
+		// 01. 获取移动意图（简单用dir_x和dir_y的正负表示）
+		int dir_x = is_move_right - is_move_left; // 右移 +1，左移 -1
+		int dir_y = is_move_down - is_move_up;    // 下移 +1，上移 -1
+
+		// 02. 计算方向向量的长度
+		double length = sqrt(dir_x * dir_x + dir_y * dir_y);
+
+		// 03. 只要长度不为 0（即玩家按了键），就进行标准化处理
+		if (length > 0) {
+			// 归一化：将分量除以总长度
+			// 例如斜向移动时，dx=1, dy=1, length=1.414
+			// 则 nx = 1/1.414 = 0.707
+			double normalized_x = dir_x / length;
+			double normalized_y = dir_y / length;
+
+			// 4. 应用速度：位移 = 方向分量 * 速度标量
+			player_pos.x += (int)(normalized_x * Player_Speed);
+			player_pos.y += (int)(normalized_y * Player_Speed);
+		}
+
+		// 04. 边界检测，确保玩家不会移出屏幕
+		if (player_pos.x < 0) player_pos.x = 0;
+		if (player_pos.y < 0) player_pos.y = 0;
+		if (player_pos.x + PLAYER_WIDTH > screen_width) player_pos.x = screen_width - PLAYER_WIDTH;
+		if (player_pos.y + PLAYER_HEIGHT > screen_height) player_pos.y = screen_height - PLAYER_HEIGHT;
+
 
 
 		// 2.游戏运行时绘制
@@ -108,13 +147,9 @@ int main() {
 			cleardevice();
 			putimage(0, 0, &img_background);
 
-			// 确定移动方向
-			int dir_x = 0;
-			if (is_move_left) dir_x = -1;
-			else if (is_move_right) dir_x = 1;
 
 			// 关键调用：传入时间增量和方向
-			drawPlayer(delta, dir_x);
+			drawPlayer(delta, is_move_right - is_move_left);
 
 			FlushBatchDraw();
 		}
