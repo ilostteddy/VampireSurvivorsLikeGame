@@ -13,11 +13,28 @@ void TryGenerateEnemy(std::vector<Enemy*>& enemies) {
 		enemies.push_back(new Enemy());
 }
 
+
+// 子弹跟随玩家
+void UpdateBulletsPosition(const Player& player, std::vector<Bullet>& bullets) {
+	const double RADIAL_SPEED = 0.005;// 子弹围绕玩家旋转的速度
+	const double TANGENT_SPEED = 0.005;// 子弹切线方向的速度
+	double radian_interval = (2 * 3.1415926) / bullets.size(); // 子弹之间的角度间隔
+	double radius = 100 + 25 * sin(GetTickCount() * RADIAL_SPEED); // 子弹距离玩家时远时近的波动效果
+	POINT player_pos = { player.getPosition().x + player.PLAYER_WIDTH / 2, player.getPosition().y + player.PLAYER_HEIGHT / 2 };
+
+	for (size_t i = 0; i < bullets.size(); i++) {
+		double angle = GetTickCount() * TANGENT_SPEED + radian_interval * i; // 计算当前子弹的角度
+		bullets[i].position.x = player_pos.x + (int)(radius * cos(angle));
+		bullets[i].position.y = player_pos.y + (int)(radius * sin(angle));
+	}
+}
+
 int main() {
 
 	Player player; // 创建玩家对象
 
 	std::vector<Enemy*> enemies; // 创建敌人对象的容器 
+	std::vector<Bullet> bullets(3); // 创建子弹对象的容器，预留给不同类型的子弹，等效于Bullet bullets[3]
 
 	// 窗口部分
 	int screen_width = 1280;
@@ -56,7 +73,7 @@ int main() {
 
 		// 2.处理数据
 		player.Move(screen_width, screen_height); // 玩家移动
-		
+		UpdateBulletsPosition(player, bullets); // 子弹跟随玩家
 		TryGenerateEnemy(enemies); //敌人生成
 
 		for (Enemy* enemy : enemies)
@@ -70,6 +87,15 @@ int main() {
 			}
 		}
 
+		for (Enemy* enemy : enemies) { // 检测敌人和子弹碰撞
+			for (const Bullet& bullet : bullets) {
+				if (enemy->CheckCollisionWithBullet(bullet)) {
+					// enemy->is_alive = false; // 碰撞后标记敌人为死亡状态
+				}
+			}
+
+		}
+
 		// 3.渲染
 		if (running) {
 			cleardevice();
@@ -79,6 +105,10 @@ int main() {
 
 			for (Enemy* enemy : enemies)
 				enemy->enemy_Draw(delta);
+
+			for (const Bullet& bullet : bullets) {
+				bullet.Draw();
+			}
 
 			FlushBatchDraw();
 		}
