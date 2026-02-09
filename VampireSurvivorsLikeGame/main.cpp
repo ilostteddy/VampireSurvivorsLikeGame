@@ -3,15 +3,26 @@
 #include <string>
 #include "Animation.h"
 #include "Player.h"
+#include "Enemy.h"
+
+// 生成新敌人
+void TryGenerateEnemy(std::vector<Enemy*>& enemies) {
+	const int interval = 50; // 生成敌人的间隔
+	static int counter = 0; // 静态变量用于计数
+	if ((++counter) % interval == 0)
+		enemies.push_back(new Enemy());
+}
 
 int main() {
+
 	Player player; // 创建玩家对象
 
+	std::vector<Enemy*> enemies; // 创建敌人对象的容器 
+
+	// 窗口部分
 	int screen_width = 1280;
 	int screen_height = 720;
-
 	HWND test = initgraph(screen_width, screen_height);
-
 	SetWindowTextW(test, L"类吸血鬼");
 
 	bool running = true; //主循环控制变量
@@ -24,6 +35,8 @@ int main() {
 	BeginBatchDraw(); // 批量绘制，减少闪烁
 
 	DWORD last_tick = GetTickCount(); // 初始化上一帧时间
+
+
 
 	// 0.主循环
 	while (running) {
@@ -39,20 +52,40 @@ int main() {
 			}; 
 		}
 
-		// 玩家移动逻辑
-		player.Move(screen_width, screen_height);
 
-		// 2.游戏运行时绘制
+
+		// 2.处理数据
+		player.Move(screen_width, screen_height); // 玩家移动
+		
+		TryGenerateEnemy(enemies); //敌人生成
+
+		for (Enemy* enemy : enemies)
+			enemy->Enemy_Move(player); //敌人移动
+
+		for (Enemy* enemy : enemies) { //检测敌人和玩家碰撞
+			if (enemy->CheckCollisionWithPlayer(player)) {
+				MessageBox(GetHWnd(), L"Game Over", L"You have been hit!", MB_OK);
+				running = false; // 碰撞后结束游戏
+				break;
+			}
+		}
+
+		// 3.渲染
 		if (running) {
 			cleardevice();
 			putimage(0, 0, &img_background);
 
 			player.drawPlayer(delta);
 
+			for (Enemy* enemy : enemies)
+				enemy->enemy_Draw(delta);
+
 			FlushBatchDraw();
 		}
 
-		// 3.控制帧率
+
+
+		// 4.控制帧率
 		DWORD end_time = GetTickCount();
 		DWORD delta_time = end_time - start_time;
 		if (delta_time < (1000 / 60)) {

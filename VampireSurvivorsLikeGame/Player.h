@@ -6,6 +6,10 @@
 
 class Player {
 public:
+	const int PLAYER_WIDTH = 80;  // 玩家宽度
+	const int PLAYER_HEIGHT = 80;  // 玩家高度
+
+
 	Player() {
 		loadimage(&img_shadow, L"assets/img/shadow_player.png");
 		// new函数返回对应类型的指针，同时避免拷贝
@@ -108,10 +112,13 @@ public:
 	}
 
 
+	POINT getPosition() const {
+		return player_pos;
+	}
+
 private:
 	const int Player_Speed = 10; // 定义一个玩家移动速度常量
-	const int PLAYER_WIDTH = 80;  // 玩家宽度
-	const int PLAYER_HEIGHT = 80;  // 玩家高度
+
 	const int SHADOW_WIDTH = 32; // 阴影宽度 
 	bool facing_left = false; // 玩家朝向，默认向右
 
