@@ -4,6 +4,9 @@
 #include "Animation.h"
 #include "Player.h"
 #include "Enemy.h"
+#include <mmsystem.h>
+
+#pragma comment(lib, "WinMM.lib") // 链接多媒体库
 
 // 生成新敌人
 void TryGenerateEnemy(std::vector<Enemy*>& enemies) {
@@ -53,6 +56,11 @@ void DrawPlayerScore(int score, int x, int y, int height = 20, LPCTSTR font = _T
 int main() {
 
 	Player player; // 创建玩家对象
+
+	mciSendString(_T("open assets/mus/bgm.mp3 alias bgm"), NULL, 0, NULL); // 加载目录中的音乐并取名bgm
+	mciSendString(_T("open assets/mus/hit.wav alias hit"), NULL, 0, NULL); // 加载目录中的音乐并取名hit
+
+	mciSendString(_T("play bgm repeat"), NULL, 0, NULL); // 循环播放音乐
 
 	static int enemy_killed_count = 0;
 
@@ -117,12 +125,13 @@ int main() {
 				if (enemy->CheckCollisionWithBullet(bullet)) {
 					enemy->getHurt(); // 敌人受伤
 					enemy_killed_count++;
+					mciSendString(_T("play hit from 0"), NULL, 0, NULL); // 从头播放击中音效
 				}
 			}
 		}
 
 
-		// 移除已死亡的敌人
+		// 移除已死亡的敌人 
 		for (size_t i = 0; i < enemies.size(); i++) {
 			Enemy* enemy = enemies[i];
 			if (!enemy->CheckAlive()) {
