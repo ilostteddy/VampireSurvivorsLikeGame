@@ -23,15 +23,28 @@ void UpdateBulletsPosition(const Player& player, std::vector<Bullet>& bullets) {
 	POINT player_pos = { player.getPosition().x + player.PLAYER_WIDTH / 2, player.getPosition().y + player.PLAYER_HEIGHT / 2 };
 
 	for (size_t i = 0; i < bullets.size(); i++) {
-		double angle = GetTickCount() * TANGENT_SPEED + radian_interval * i; // 计算当前子弹的角度
+		double angle = GetTickCount() * TANGENT_SPEED + radian_interval * i; // 计算当前子弹的角度，radian_interval * i做子弹间隔
 		bullets[i].position.x = player_pos.x + (int)(radius * cos(angle));
 		bullets[i].position.y = player_pos.y + (int)(radius * sin(angle));
 	}
 }
 
+// 绘制玩家得分
+void DrewPlayerScore(int score) {
+	static TCHAR text[256];
+	_stprintf_s(text, _T("得分: %d"), score);
+
+	setbkmode(TRANSPARENT);
+	settextcolor(RGB(256, 256, 256));
+	outtextxy(10, 10, text);
+}
+
+
 int main() {
 
 	Player player; // 创建玩家对象
+
+	static int enemy_killed_count = 0;
 
 	std::vector<Enemy*> enemies; // 创建敌人对象的容器 
 	std::vector<Bullet> bullets(3); // 创建子弹对象的容器，预留给不同类型的子弹，等效于Bullet bullets[3]
@@ -90,11 +103,24 @@ int main() {
 		for (Enemy* enemy : enemies) { // 检测敌人和子弹碰撞
 			for (const Bullet& bullet : bullets) {
 				if (enemy->CheckCollisionWithBullet(bullet)) {
-					// enemy->is_alive = false; // 碰撞后标记敌人为死亡状态
+					enemy->getHurt(); // 敌人受伤
+					enemy_killed_count++;
 				}
 			}
-
 		}
+
+
+		// 移除已死亡的敌人
+		for (size_t i = 0; i < enemies.size(); i++) {
+			Enemy* enemy = enemies[i];
+			if (!enemy->CheckAlive()) {
+				std::swap(enemies[i], enemies.back());
+				enemies.pop_back();
+				delete enemy; // 重新检查当前索引
+			}
+		}
+
+
 
 		// 3.渲染
 		if (running) {
@@ -109,6 +135,8 @@ int main() {
 			for (const Bullet& bullet : bullets) {
 				bullet.Draw();
 			}
+			
+			DrewPlayerScore(enemy_killed_count);
 
 			FlushBatchDraw();
 		}

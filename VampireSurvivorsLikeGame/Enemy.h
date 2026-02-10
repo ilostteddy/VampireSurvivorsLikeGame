@@ -110,7 +110,22 @@ public:
 			anim_right->Play(Enemy_pos.x, Enemy_pos.y, delta);
 	}
 
+
+	// 与子弹碰撞后CheckCollisionWithBullet为true时候调用
+	void getHurt() {
+		is_alive = false;
+	}
+
+
+	// 存活检测
+	bool CheckAlive() const {
+		return is_alive;
+	}
+
+
 private:
+	bool is_alive = true; // 敌人存活状态
+
 	int screen_width = 1280;
 	int screen_height = 720;
 
