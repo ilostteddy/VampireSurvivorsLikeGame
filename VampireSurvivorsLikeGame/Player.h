@@ -2,6 +2,7 @@
 
 #include <graphics.h>
 #include "Animation.h"
+#include "Atlas.h"
 #include <cmath>
 
 class Player {
@@ -10,11 +11,11 @@ public:
 	const int PLAYER_HEIGHT = 80;  // 玩家高度
 
 
-	Player() {
-		loadimage(&img_shadow, L"assets/img/shadow_player.png");
+	Player(Atlas* atlas_player_left, Atlas* atlas_player_right) {
+		loadimage(&img_shadow, _T("assets/img/shadow_player.png"));
 		// new函数返回对应类型的指针，同时避免拷贝
-		anim_left = new Animation{ L"assets/img/player_left_%d.png", 6, 80 };
-		anim_right = new Animation{ L"assets/img/player_right_%d.png", 6, 80 };
+		anim_left = new Animation{ atlas_player_left, 80 };
+		anim_right = new Animation{ atlas_player_right, 80 };
 	}
 
 	~Player() {

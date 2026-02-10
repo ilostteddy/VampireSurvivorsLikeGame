@@ -8,11 +8,11 @@
 
 class Enemy {
 public:
-	Enemy () {
-		loadimage(&img_shadow, L"assets/img/shadow_enemy.png");
+	Enemy(Atlas* atlas_enemy_left, Atlas* atlas_enemy_right) {
+		loadimage(&img_shadow, _T("assets/img/shadow_enemy.png"));
 		// new函数返回对应类型的指针，同时避免拷贝
-		anim_left = new Animation{ L"assets/img/enemy_left_%d.png", 6, 80 };
-		anim_right = new Animation{ L"assets/img/enemy_right_%d.png", 6, 80 };
+		anim_left = new Animation{ atlas_enemy_left, 80 };
+		anim_right = new Animation{ atlas_enemy_right, 80 };
 
 		// 定义边界
 		enum class SpawnEdge {  //enum class强枚举
@@ -140,5 +140,7 @@ private:
 	IMAGE img_shadow;     // 阴影图片
 	Animation* anim_left;  // 向左走动画
 	Animation* anim_right; // 向右走
+	Atlas* atlas_enemy_left;
+	Atlas* atlas_enemy_right;
 
 };

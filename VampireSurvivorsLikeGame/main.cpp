@@ -8,12 +8,19 @@
 
 #pragma comment(lib, "WinMM.lib") // 链接多媒体库
 
+// 加载动画序列帧资源
+Atlas* atlas_player_left;
+Atlas* atlas_player_right;
+Atlas* atlas_enemy_left;
+Atlas* atlas_enemy_right;
+
+
 // 生成新敌人
-void TryGenerateEnemy(std::vector<Enemy*>& enemies) {
+void TryGenerateEnemy(std::vector<Enemy*>& enemies) { 
 	const int interval = 50; // 生成敌人的间隔
 	static int counter = 0; // 静态变量用于计数
 	if ((++counter) % interval == 0)
-		enemies.push_back(new Enemy());
+		enemies.push_back(new Enemy(atlas_enemy_left, atlas_enemy_right));
 }
 
 
@@ -53,9 +60,15 @@ void DrawPlayerScore(int score, int x, int y, int height = 20, LPCTSTR font = _T
 }
 
 
-int main() {
 
-	Player player; // 创建玩家对象
+int main() {
+	// 按照逻辑，atlas资源应该在游戏初始化时加载，否则player和enemy对象无法正确创建
+	atlas_player_left = new Atlas(_T("assets/img/player_left_%d.png"), 6);
+	atlas_player_right = new Atlas(_T("assets/img/player_right_%d.png"), 6);
+	atlas_enemy_left = new Atlas(_T("assets/img/enemy_left_%d.png"), 6);
+	atlas_enemy_right = new Atlas(_T("assets/img/enemy_right_%d.png"), 6);
+
+	Player player(atlas_player_left, atlas_player_right); // 创建玩家对象
 
 	mciSendString(_T("open assets/mus/bgm.mp3 alias bgm"), NULL, 0, NULL); // 加载目录中的音乐并取名bgm
 	mciSendString(_T("open assets/mus/hit.wav alias hit"), NULL, 0, NULL); // 加载目录中的音乐并取名hit
@@ -171,6 +184,12 @@ int main() {
 			Sleep((1000 / 60) - delta_time);
 		}
 	}
+
+	// 释放atlas指针
+	delete atlas_player_left;
+	delete atlas_player_right;
+	delete atlas_enemy_left;
+	delete atlas_enemy_right;
 
 	// 结束
 	EndBatchDraw(); // 游戏结束，清理资源
