@@ -30,13 +30,23 @@ void UpdateBulletsPosition(const Player& player, std::vector<Bullet>& bullets) {
 }
 
 // 绘制玩家得分
-void DrewPlayerScore(int score) {
-	static TCHAR text[256];
+void DrawPlayerScore(int score, int x, int y, int height = 20, LPCTSTR font = _T("Consolas")) {
+	static TCHAR text[32];
 	_stprintf_s(text, _T("得分: %d"), score);
 
+	// 1. 设置背景透明
 	setbkmode(TRANSPARENT);
-	settextcolor(RGB(256, 256, 256));
-	outtextxy(10, 10, text);
+
+	// 2. 设置字体样式
+	// 出处：EasyX <graphics.h>
+	// 参数说明：(高度, 宽度(0表示自适应), 字体名)
+	settextstyle(height, 0, font);
+
+	// 3. 设置文字颜色
+	settextcolor(WHITE);
+
+	// 4. 指定位置输出
+	outtextxy(x, y, text);
 }
 
 
@@ -94,7 +104,9 @@ int main() {
 
 		for (Enemy* enemy : enemies) { //检测敌人和玩家碰撞
 			if (enemy->CheckCollisionWithPlayer(player)) {
-				MessageBox(GetHWnd(), L"Game Over", L"You have been hit!", MB_OK);
+				static TCHAR text[128];
+				_stprintf_s(text, _T("最终得分： %d !"), enemy_killed_count);
+				MessageBox(GetHWnd(), text, _T("Game Over!"), MB_OK);
 				running = false; // 碰撞后结束游戏
 				break;
 			}
@@ -136,7 +148,7 @@ int main() {
 				bullet.Draw();
 			}
 			
-			DrewPlayerScore(enemy_killed_count);
+			DrawPlayerScore(enemy_killed_count, 30, 30, 40);
 
 			FlushBatchDraw();
 		}
