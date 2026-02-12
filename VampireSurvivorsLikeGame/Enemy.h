@@ -129,7 +129,7 @@ private:
 	int screen_width = 1280;
 	int screen_height = 720;
 
-	const int Enemy_Speed = 10; // 定义一个敌人移动速度常量，不能为1否则转为int后数值为0
+	const int Enemy_Speed = 3; // 定义一个敌人移动速度常量，不能为1否则转为int后数值为0
 	const int ENEMY_WIDTH = 80;  // 敌人宽度
 	const int ENEMY_HEIGHT = 80;  // 敌人高度
 	const int SHADOW_WIDTH = 32; // 阴影宽度 

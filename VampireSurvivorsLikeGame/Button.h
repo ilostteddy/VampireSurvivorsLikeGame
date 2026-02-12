@@ -4,8 +4,6 @@
 
 class Button {
 public:
-	bool is_game_started = false; // 游戏是否开始的标志变量
-
 	Button(RECT rect, LPCTSTR path_img_idle, LPCTSTR path_img_hover, LPCTSTR path_img_pressed)  {
 		button_rect = rect;
 

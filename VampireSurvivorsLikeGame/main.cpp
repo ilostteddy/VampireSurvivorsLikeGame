@@ -1,12 +1,29 @@
 #include <graphics.h>
 #include <iostream>
 #include <string>
+#include <mmsystem.h>
+#pragma region
+
+bool is_game_started = false; // 游戏是否开始的标志变量
+bool running = true; //主循环控制变量
+
+#pragma comment(lib, "WinMM.lib") // 链接多媒体库
+#pragma comment(lib, "Msimg32.lib") // 封装一个putimage_alpha函数，用于绘制带透明通道的图片
+
+// inline关键字防止重定义
+inline void putimage_alpha(int x, int y, IMAGE* img) {
+	int w = img->getwidth();
+	int h = img->getheight();
+	AlphaBlend(GetImageHDC(NULL), x, y, w, h,
+		GetImageHDC(img), 0, 0, w, h, { AC_SRC_OVER, 0, 255, AC_SRC_ALPHA });
+}
+
 #include "Animation.h"
 #include "Player.h"
 #include "Enemy.h"
-#include <mmsystem.h>
+#include "Button.h"
+#include "Button_start_end.h"
 
-#pragma comment(lib, "WinMM.lib") // 链接多媒体库
 
 // 加载动画序列帧资源
 Atlas* atlas_player_left;
@@ -22,7 +39,6 @@ void TryGenerateEnemy(std::vector<Enemy*>& enemies) {
 	if ((++counter) % interval == 0)
 		enemies.push_back(new Enemy(atlas_enemy_left, atlas_enemy_right));
 }
-
 
 // 子弹跟随玩家
 void UpdateBulletsPosition(const Player& player, std::vector<Bullet>& bullets) {
@@ -62,23 +78,26 @@ void DrawPlayerScore(int score, int x, int y, int height = 20, LPCTSTR font = _T
 
 
 int main() {
+	// 音乐加载部分
+	mciSendString(_T("open assets/mus/bgm.mp3 alias bgm"), NULL, 0, NULL); // 加载目录中的音乐并取名bgm
+	mciSendString(_T("open assets/mus/hit.wav alias hit"), NULL, 0, NULL); // 加载目录中的音乐并取名hit
+
+	// 动画序列帧加载部分
 	// 按照逻辑，atlas资源应该在游戏初始化时加载，否则player和enemy对象无法正确创建
 	atlas_player_left = new Atlas(_T("assets/img/player_left_%d.png"), 6);
 	atlas_player_right = new Atlas(_T("assets/img/player_right_%d.png"), 6);
 	atlas_enemy_left = new Atlas(_T("assets/img/enemy_left_%d.png"), 6);
 	atlas_enemy_right = new Atlas(_T("assets/img/enemy_right_%d.png"), 6);
 
+	// 主要游戏对象创建部分
 	Player player(atlas_player_left, atlas_player_right); // 创建玩家对象
-
-	mciSendString(_T("open assets/mus/bgm.mp3 alias bgm"), NULL, 0, NULL); // 加载目录中的音乐并取名bgm
-	mciSendString(_T("open assets/mus/hit.wav alias hit"), NULL, 0, NULL); // 加载目录中的音乐并取名hit
-
-	mciSendString(_T("play bgm repeat"), NULL, 0, NULL); // 循环播放音乐
-
-	static int enemy_killed_count = 0;
-
 	std::vector<Enemy*> enemies; // 创建敌人对象的容器 
 	std::vector<Bullet> bullets(3); // 创建子弹对象的容器，预留给不同类型的子弹，等效于Bullet bullets[3]
+
+	// 游戏状态变量
+	static int enemy_killed_count = 0;
+	ExMessage msg; // 消息结构体，用于存储输入消息
+	DWORD last_tick = GetTickCount(); // 初始化上一帧时间
 
 	// 窗口部分
 	int screen_width = 1280;
@@ -86,17 +105,35 @@ int main() {
 	HWND test = initgraph(screen_width, screen_height);
 	SetWindowTextW(test, L"类吸血鬼");
 
-	bool running = true; //主循环控制变量
 
-	ExMessage msg; // 消息结构体，用于存储输入消息
+	// ui按钮部分
+	int Button_Width = 200;
+	int Button_Height = 100;
 
+	RECT region_start_button; // 定义开始按钮的区域，后续可以用来检测鼠标点击事件是否在这个区域内，从而触发游戏开始的逻辑
+	RECT region_end_button; // 定义结束按钮的区域，后续可以用来检测鼠标点击事件是否在这个区域内，从而触发游戏结束的逻辑
+
+	region_start_button.left = (screen_width - Button_Width) / 2;
+	region_start_button.right = region_start_button.left + Button_Width;
+	region_start_button.top = 430;
+	region_start_button.bottom = region_start_button.top + Button_Height;
+
+	region_end_button.left = (screen_width - Button_Width) / 2;
+	region_end_button.right = region_end_button.left + Button_Width;
+	region_end_button.top = 580;
+	region_end_button.bottom = region_end_button.top + Button_Height;
+
+	StartButton start_button{ region_start_button, _T("assets/img/ui_start_idle.png"), _T("assets/img/ui_start_hovered.png"), _T("assets/img/ui_start_pushed.png") };
+	EndButton end_button{ region_end_button, _T("assets/img/ui_quit_idle.png"), _T("assets/img/ui_quit_hovered.png"), _T("ui_quit_pushed.png") };
+
+
+	// 画面部分
 	IMAGE img_background; // 背景图片
 	loadimage(&img_background, L"assets/img/background.png");
+	IMAGE img_menu; // 主界面图片
+	loadimage(&img_menu, L"assets/img/menu.png");
 
 	BeginBatchDraw(); // 批量绘制，减少闪烁
-
-	DWORD last_tick = GetTickCount(); // 初始化上一帧时间
-
 
 
 	// 0.主循环
@@ -108,74 +145,86 @@ int main() {
 
 		// 1.处理消息
 		while (peekmessage(&msg)) {
-			if (player.ProcessInput(msg)) {   // 处理玩家输入
+			if (is_game_started) {
+				if (player.ProcessInput(msg)) {
 				running = false;
-			}; 
-		}
-
-
-
-		// 2.处理数据
-		player.Move(screen_width, screen_height); // 玩家移动
-		UpdateBulletsPosition(player, bullets); // 子弹跟随玩家
-		TryGenerateEnemy(enemies); //敌人生成
-
-		for (Enemy* enemy : enemies)
-			enemy->Enemy_Move(player); //敌人移动
-
-		for (Enemy* enemy : enemies) { //检测敌人和玩家碰撞
-			if (enemy->CheckCollisionWithPlayer(player)) {
-				static TCHAR text[128];
-				_stprintf_s(text, _T("最终得分： %d !"), enemy_killed_count);
-				MessageBox(GetHWnd(), text, _T("Game Over!"), MB_OK);
-				running = false; // 碰撞后结束游戏
-				break;
+				}
+			}
+			else {
+				start_button.ProcessMouseEvent(msg);
+				end_button.ProcessMouseEvent(msg);
 			}
 		}
 
-		for (Enemy* enemy : enemies) { // 检测敌人和子弹碰撞
-			for (const Bullet& bullet : bullets) {
-				if (enemy->CheckCollisionWithBullet(bullet)) {
-					enemy->getHurt(); // 敌人受伤
-					enemy_killed_count++;
-					mciSendString(_T("play hit from 0"), NULL, 0, NULL); // 从头播放击中音效
+
+		// 2.处理数据
+		if (is_game_started) {
+			player.Move(screen_width, screen_height); // 玩家移动
+			UpdateBulletsPosition(player, bullets); // 子弹跟随玩家
+			TryGenerateEnemy(enemies); //敌人生成
+
+			for (Enemy* enemy : enemies)
+				enemy->Enemy_Move(player); //敌人移动
+
+			for (Enemy* enemy : enemies) { //检测敌人和玩家碰撞
+				if (enemy->CheckCollisionWithPlayer(player)) {
+					static TCHAR text[128];
+					_stprintf_s(text, _T("最终得分： %d !"), enemy_killed_count);
+					MessageBox(GetHWnd(), text, _T("Game Over!"), MB_OK);
+					running = false; // 碰撞后结束游戏
+					break;
+				}
+			}
+
+			for (Enemy* enemy : enemies) { // 检测敌人和子弹碰撞
+				for (const Bullet& bullet : bullets) {
+					if (enemy->CheckCollisionWithBullet(bullet)) {
+						enemy->getHurt(); // 敌人受伤
+						enemy_killed_count++;
+						mciSendString(_T("play hit from 0"), NULL, 0, NULL); // 从头播放击中音效
+					}
+				}
+			}
+
+			// 移除已死亡的敌人 
+			for (size_t i = 0; i < enemies.size(); i++) {
+				Enemy* enemy = enemies[i];
+				if (!enemy->CheckAlive()) {
+					std::swap(enemies[i], enemies.back());
+					enemies.pop_back();
+					delete enemy; // 重新检查当前索引
 				}
 			}
 		}
 
-
-		// 移除已死亡的敌人 
-		for (size_t i = 0; i < enemies.size(); i++) {
-			Enemy* enemy = enemies[i];
-			if (!enemy->CheckAlive()) {
-				std::swap(enemies[i], enemies.back());
-				enemies.pop_back();
-				delete enemy; // 重新检查当前索引
-			}
-		}
-
-
-
 		// 3.渲染
 		if (running) {
+
 			cleardevice();
-			putimage(0, 0, &img_background);
 
-			player.drawPlayer(delta);
+			if (is_game_started) {
 
-			for (Enemy* enemy : enemies)
-				enemy->enemy_Draw(delta);
+				putimage(0, 0, &img_background);
 
-			for (const Bullet& bullet : bullets) {
-				bullet.Draw();
+				player.drawPlayer(delta);
+
+				for (Enemy* enemy : enemies)
+					enemy->enemy_Draw(delta);
+
+				for (const Bullet& bullet : bullets)
+					bullet.Draw();
+
+				DrawPlayerScore(enemy_killed_count, 30, 30, 40);
 			}
-			
-			DrawPlayerScore(enemy_killed_count, 30, 30, 40);
 
-			FlushBatchDraw();
+			else {
+				putimage(0, 0, &img_menu);
+				start_button.button_Draw();
+				end_button.button_Draw();
+			}
 		}
-
-
+		FlushBatchDraw();
+	
 
 		// 4.控制帧率
 		DWORD end_time = GetTickCount();
@@ -197,4 +246,3 @@ int main() {
 
 	return 0;
 }
-
