@@ -35,10 +35,13 @@ public:
 			int h = src_img->getheight();
 			Resize(new_img, w, h);
 
-			// 逐像素拷贝原图像到新图像（深拷贝）
-			BitBlt(GetImageHDC(new_img), 0, 0, w, h,
-				GetImageHDC(src_img), 0, 0, SRCCOPY);
-
+			// 逐像素拷贝原图像到新图像
+			for (int y = 0; y < h; y++) {
+				for (int x = 0; x < w; x++) {
+					DWORD pixel = GetImageBuffer(src_img)[y * w + x]; // 获取原图像像素
+					GetImageBuffer(new_img)[y * w + x] = pixel; // 拷贝到新图像
+				}
+			}
 			frame_list.push_back(new_img);
 		}
 	}
