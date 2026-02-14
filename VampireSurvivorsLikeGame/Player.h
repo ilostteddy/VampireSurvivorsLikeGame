@@ -18,10 +18,12 @@ public:
 		anim_right = new Animation{ atlas_player_right, 80 };
 	}
 
+
 	~Player() {
 		delete anim_left;
 		delete anim_right;
 	}
+
 
 	// 处理玩家键盘消息 
 	bool ProcessInput(const ExMessage& msg) {

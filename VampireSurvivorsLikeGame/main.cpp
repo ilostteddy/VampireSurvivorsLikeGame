@@ -11,6 +11,7 @@ bool running = true; //主循环控制变量
 #pragma comment(lib, "Msimg32.lib") // 封装一个putimage_alpha函数，用于绘制带透明通道的图片
 
 // inline关键字防止重定义
+// x 和 y 是图像在目标绘制区域（游戏窗口 / 画布） 中的左上角坐标
 inline void putimage_alpha(int x, int y, IMAGE* img) {
 	int w = img->getwidth();
 	int h = img->getheight();
@@ -30,6 +31,16 @@ Atlas* atlas_player_left;
 Atlas* atlas_player_right;
 Atlas* atlas_enemy_left;
 Atlas* atlas_enemy_right;
+
+
+
+
+
+
+
+
+
+
 
 
 // 生成新敌人
@@ -84,10 +95,15 @@ int main() {
 
 	// 动画序列帧加载部分
 	// 按照逻辑，atlas资源应该在游戏初始化时加载，否则player和enemy对象无法正确创建
+	// 1. 创建左方向Atlas
 	atlas_player_left = new Atlas(_T("assets/img/player_left_%d.png"), 6);
-	atlas_player_right = new Atlas(_T("assets/img/player_right_%d.png"), 6);
+	// 2. 基于左Atlas深拷贝创建右Atlas，再翻转
+	atlas_player_right = new Atlas(*atlas_player_left);  // 先拷贝
+	atlas_player_right->invert();                       // 再翻转
+	// 敌人同理
 	atlas_enemy_left = new Atlas(_T("assets/img/enemy_left_%d.png"), 6);
-	atlas_enemy_right = new Atlas(_T("assets/img/enemy_right_%d.png"), 6);
+	atlas_enemy_right = new Atlas(*atlas_enemy_left);
+	atlas_enemy_right->invert();
 
 	// 主要游戏对象创建部分
 	Player player(atlas_player_left, atlas_player_right); // 创建玩家对象
@@ -125,6 +141,13 @@ int main() {
 
 	StartButton start_button{ region_start_button, _T("assets/img/ui_start_idle.png"), _T("assets/img/ui_start_hovered.png"), _T("assets/img/ui_start_pushed.png") };
 	EndButton end_button{ region_end_button, _T("assets/img/ui_quit_idle.png"), _T("assets/img/ui_quit_hovered.png"), _T("ui_quit_pushed.png") };
+
+
+
+
+
+
+
 
 
 	// 画面部分

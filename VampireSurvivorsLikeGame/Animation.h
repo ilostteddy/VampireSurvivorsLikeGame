@@ -25,6 +25,8 @@ public:
 		putimage_alpha(x, y, anim_atlas->frame_list[idx_frame]);
 	}
 
+
+
 private:
 	int timer = 0; // 定义一个计时器成员变量，用于跟踪动画时间	
 	int idx_frame = 0; // 定义一个索引成员变量，用于跟踪当前动画帧
